@@ -1,0 +1,62 @@
+@startuml
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Диаграмма компонентов для Мониторинга показаний датчиков (телеметрия)
+
+Boundary(gateway, "Слой шлюзов") {
+    Container(api_gateway, "API шлюз", "Kong", "Общий сервис фильтрации и распределения запросов")
+}
+
+Boundary(microiservices, "Слой внутренних сервисов") {
+    Container(scenarios, "Сценарии", "Java", "Сервис сценариев и шаблонов управления умным домом")
+    Container(management, "Управление устройствами")
+}
+
+Container(telemetry, "Мониторинг показаний датчиков (телеметрия)", "Java/Spring Boot") {
+    Boundary(api_layer, Слой API) {
+        Component(info_api, "Telemetry API", "Java", "Контроллер обработки запросов на получение показаний мониторинга")
+        Component(telemetry_listen, "Слушатель датчиков", "Java", "Слушатель входящих показаний датчиков")
+        Component(devices_listen, "Слушатель событий", "Java", "Слушатель событий изменения конфигурации датчиков")
+        Component(patterns_api, "Patterns API", "Java", "Контроллер управления шаблонами срабатывания предупреждений")
+    }
+
+    Boundary(service_layer, Слой логики) {
+        Component(info_impl, "Обработчик запросов данных мониторинга", "Java", "Бизнес логика получения данных мониторинга датчиков")
+        Component(patterns_impl, "Devices service", "Java", "Бизнес логика управления шаблонами срабатывания событий")
+        Component(monitoring, "Мониторинг", "Java", "Бизнес логика отслеживания совпадения заложенных шаблонов с показаниями датчиков")
+        Component(telemetry_saver, "Обработчик полученных показаний датчиков", "Java", "Обработка и сохранение показаний датчиков")
+        Component(devices_saver, "Обработчик событий изменения конфигурации", "Java", "Обработка и сохранение конфигурации датчиков")
+
+    }
+
+    Boundary(dao_layer, Слой доступа к данным) {
+        Component(repository, "Repository", "Java", "Реализация взаимодействия с БД")
+    }
+
+    ComponentDb(devices_db, "СУБД", "Postgres", СУБД для хранения данных датчиках и шаблонах мониторинга состояния)
+
+    Rel(info_api, info_impl, "Вызов бизнес логики")
+    Rel(patterns_api, patterns_impl, "Вызов бизнес логики")
+    Rel(devices_listen, devices_saver, "Вызов бизнес логики")
+    Rel(telemetry_listen, telemetry_saver, "Вызов бизнес логики")
+    Rel(info_impl, dao_layer, "Чтение данных")
+    Rel(patterns_impl, dao_layer, "Поиск/изменение данных")
+    Rel(monitoring, dao_layer, "Чтение данных")
+    Rel(telemetry_saver, dao_layer, "Запись данных")
+    Rel(devices_saver, dao_layer, "Поиск/изменение данных")
+
+    Rel(dao_layer, devices_db, "Чтение/запись", "Hibernate/Hikari pool")
+}
+
+Boundary(event_registration, "Слой асинхронных взаимодействий") {
+    Container(kafka, "Шина асинхронных взаимодействий", "Apache Kafka", "Брокер сообщений для асинхронных взаимодействий")
+}
+
+Rel(kafka, telemetry_listen, "Получить показания датчика", "Json")
+Rel(kafka, devices_listen, "Получить событие добавления/изменения датчика", "Json")
+Rel(monitoring, kafka, "Сгенерировать событие достижения порогового состояния", "REST API")
+Rel(api_gateway, info_api, "Запросы получения показаний мониторинга", "REST API")
+Rel(scenarios, patterns_api, "Запросы получения показаний мониторинга", "REST API")
+
+
+@enduml

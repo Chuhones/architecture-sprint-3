@@ -1,0 +1,41 @@
+@startuml
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Диаграмма компонентов для Профиля пользователя
+
+Boundary(gateway, "Слой шлюзов") {
+    Container(api_gateway, "API шлюз", "Kong", "Общий сервис фильтрации и распределения запросов")
+}
+
+Container(user_profile, "Профиль пользователя", "Java/Spring Boot") {
+    Boundary(api_layer, Слой API) {
+        Component(auth_api, "Auth API", "Java", "Контроллер авторизации и регистрации пользователей")
+        Component(device_api, "Devices API", "Java", "Контроллер управления составом клиентского массива устройств")
+    }
+
+    Boundary(service_layer, Слой логики) {
+        Component(auth_impl, "Auth service", "Java", "Бизнес логика регистрации и авторизации пользователей")
+        Component(device_impl, "Devices service", "Java", "Бизнес логика добавления, удаления и настройки клиентских устройств")
+    }
+
+    Boundary(dao_layer, Слой доступа к данным) {
+        Component(repository, "Repository", "Java", "Реализация взаимодействия с БД")
+    }
+
+    ComponentDb(devices_db, "СУБД", "Postgres", СУБД для хранения данных о пользователях и их системах)
+
+    Rel(auth_api, auth_impl, "Вызов бизнес логики")
+    Rel(device_api, device_impl, "Вызов бизнес логики")
+    Rel(auth_impl, dao_layer, "Поиск/изменение данных")
+    Rel(device_impl, dao_layer, "Поиск/изменение данных")
+    Rel(dao_layer, devices_db, "Чтение/запись", "Hibernate/Hikari pool")
+}
+
+Boundary(event_registration, "Слой асинхронных взаимодействий") {
+    Container(kafka, "Шина асинхронных взаимодействий", "Apache Kafka", "Брокер сообщений для асинхронных взаимодействий")
+}
+
+Rel(device_impl, kafka, "Опубликовать событие добавления/изменения устройства/датчика", "Json")
+Rel(api_gateway, auth_api, "Запросы авторизации и управления пользователями", "REST API")
+Rel(api_gateway, device_api, "Запросы добавления/изменения устройств пользователя", "REST API")
+@enduml
