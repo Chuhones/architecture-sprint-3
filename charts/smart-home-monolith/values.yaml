@@ -107,4 +107,4 @@ postgresql:
   auth:
     username: postgres
     password: postgres
-    database: postgres
+    database: smart_home
