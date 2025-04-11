@@ -1,0 +1,71 @@
+@startuml
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Диаграмма компонентов для Управления устройствами
+
+Boundary(event_registration, "Слой асинхронных взаимодействий") {
+    Container(kafka, "Шина асинхронных взаимодействий", "Apache Kafka", "Брокер сообщений для асинхронных взаимодействий")
+}
+
+Boundary(gateway, "Слой шлюзов") {
+    Container(api_gateway, "API шлюз", "Kong", "Общий сервис фильтрации и распределения запросов")
+}
+
+Boundary(microiservices, "Слой внутренних сервисов") {
+    Container(scenarios, "Сценарии", "Java", "Сервис сценариев и шаблонов управления умным домом")
+}
+
+Container(management, "Управление устройствами", "Java/Spring Boot") {
+    Boundary(api_layer, Слой API) {
+        Component(kafka_listen, "Слушатель событий", "Java", "Слушатель событий, поставляемых шиной асинхронных взаимодействий")
+        Component(commands_api, "Commands API", "Java", "Контроллер получения команд управления устройствами")
+    }
+
+    Boundary(service_layer, Слой логики) {
+        Component(listener_impl, "Обработка событий", "Java", "Бизнес логика регистрации и обработки событий асинхронного взаимодействия")
+        Component(commands_impl, "Обработка команд", "Java", "Бизнес логика добавления, удаления и настройки клиентских устройств")
+    }
+
+    Boundary(dao_layer, Слой доступа к данным) {
+        Component(repository, "Repository", "Java", "Реализация взаимодействия с БД")
+    }
+
+    Boundary(adapter_layer, Слой связи с устройствами) {
+        Component(heat_inf, "Адаптер управления отоплением", "Java", "Реализация взаимодействия с внешними системами управления отоплением")
+        Component(video_inf, "Адаптер управления видеонаблюдением", "Java", "Реализация взаимодействия с системой видеонаблюдения")
+        Component(gate_inf, "Адаптер управления воротами", "Java", "Реализация взаимодействия с системой управления воротами")
+        Component(light_inf, "Адаптер управления светом", "Java", "Реализация взаимодействия с системой управления светом")
+    }
+
+    ComponentDb(management_db, "СУБД", "Postgres", СУБД для хранения данных об устройствах и их конфигурации)
+
+    Rel(commands_api, commands_impl, "Вызов бизнес логики")
+    Rel(kafka_listen, listener_impl, "Вызов обработки")
+    Rel(commands_impl, dao_layer, "Поиск/изменение данных")
+    Rel(listener_impl, dao_layer, "Поиск/изменение данных")
+    Rel(dao_layer, management_db, "Чтение/запись", "Hibernate/Hikari pool")
+    Rel(commands_impl, heat_inf, "Вызов управляющей команды")
+    Rel(commands_impl, video_inf, "Вызов управляющей команды")
+    Rel(commands_impl, gate_inf, "Вызов управляющей команды")
+    Rel(commands_impl, light_inf, "Вызов управляющей команды")
+}
+
+Boundary(smart_home, "Слой внутренних сервисов") {
+    Container(home_server, "Управляющее устройство", "hardware device", "Локальное устройство для управления отдельными системами дома")
+    Container(device, "Массив управляемых устройств", "hardware device", "Различные устройства умного дома, поддерживающие протоколы удаленного управления")
+}
+
+Rel(kafka, kafka_listen, "Прочитать событие добавления/изменения устройства", "Json")
+Rel(api_gateway, commands_api, "Запросы прямого управления устройствами", "REST API")
+Rel(scenarios, commands_api, "Запросы управления устройствами по сценарию", "REST API")
+
+Rel(heat_inf, home_server, "Передать управляющую команду", "REST API")
+Rel(video_inf, home_server, "Передать управляющую команду", "REST API")
+Rel(gate_inf, home_server, "Передать управляющую команду", "REST API")
+Rel(light_inf, home_server, "Передать управляющую команду", "REST API")
+Rel(heat_inf, device, "Передать управляющую команду", "Json")
+Rel(video_inf, device, "Передать управляющую команду", "Json")
+Rel(gate_inf, device, "Передать управляющую команду", "Json")
+Rel(light_inf, device, "Передать управляющую команду", "Json")
+
+@enduml

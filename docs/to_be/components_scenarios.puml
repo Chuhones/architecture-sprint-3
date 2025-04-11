@@ -1,0 +1,50 @@
+@startuml
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Диаграмма компонентов для Сценариев
+
+Boundary(gateway, "Слой шлюзов") {
+    Container(api_gateway, "API шлюз", "Kong", "Общий сервис фильтрации и распределения запросов")
+}
+
+Boundary(microiservices, "Слой внутренних сервисов") {
+    Container(telemetry_service, "Мониторинг показаний датчиков (телеметрия)", "Java", "Сервис обработки состояния датчиков и уведомления о пограничных значениях")
+    Container(device_service, "Управление устройствами", "Java", "Сервис удаленного управления устройствами умного дома, в том числе подключения к видеонаблюдению")
+}
+
+Boundary(event_registration, "Слой асинхронных взаимодействий") {
+    Container(kafka, "Шина асинхронных взаимодействий", "Apache Kafka", "Брокер сообщений для асинхронных взаимодействий")
+}
+
+Container(user_profile, "Профиль пользователя", "Java/Spring Boot") {
+    Boundary(api_layer, Слой API) {
+        Component(scenarios_api, "Scenarios API", "Java", "Контроллер добавления/изменения/просмотра сценариев управления устройствами")
+        Component(event_listen, "Слушатель событий", "Java", "Слушатель событий достижения пороговых показаний датчиков")
+    }
+
+    Boundary(service_layer, Слой логики) {
+        Component(scenarios_impl, "Управление сценариями", "Java", "Бизнес логика управления сценариями и шаблонами показаний датчиков")
+        Component(event_impl, "Обработчик событий", "Java", "Обработка событий достижения пороговых показаний датчиков")
+    }
+
+    Boundary(dao_layer, Слой доступа к данным) {
+        Component(repository, "Repository", "Java", "Реализация взаимодействия с БД")
+    }
+
+    ComponentDb(devices_db, "СУБД", "Postgres", СУБД для хранения данных сценариев управления устройстами)
+
+    Rel(scenarios_api, scenarios_impl, "Вызов бизнес логики")
+    Rel(event_listen, event_impl, "Вызов бизнес логики")
+    Rel(scenarios_impl, dao_layer, "Поиск/изменение данных")
+    Rel(event_impl, dao_layer, "Поиск/изменение данных")
+    Rel(dao_layer, devices_db, "Чтение/запись", "Hibernate/Hikari pool")
+}
+
+
+
+Rel(kafka, event_listen, "Получить событие достижения пороговых показаний датчиков", "Json")
+Rel(api_gateway, scenarios_api, "Запросы управления сценариями", "REST API")
+Rel(event_impl, device_service, "Запрос на управление устройствами", "REST API")
+Rel(scenarios_impl, telemetry_service, "Запрос на добавление/изменение шаблона", "REST API")
+
+@enduml
