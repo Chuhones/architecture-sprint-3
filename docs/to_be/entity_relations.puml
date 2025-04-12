@@ -15,10 +15,18 @@ entity User as "Пользователь" {
     +email: String
 }
 
+entity UserPermission as "Привилегии пользователя" {
+    *id: Long
+    ..
+    *permissionType: String
+    *userId: String
+    *systemId: String
+    *isActive
+}
+
 entity System as "Система умного дома"{
     *id: Long
     ..
-    *userId: Long
     *name: String
     +address: String
     +description: String
@@ -88,12 +96,24 @@ entity SensorAlertTemplate as "Условие срабатывания собы�
     *message: String
 }
 
-User::Id ||--o{ System
+entity SensorEventLog as "Журнал показаний датчика"{
+    *Id: UUID
+    ..
+    *sensorId: String
+    *eventTime: Timestamp
+    *eventType: String
+    *currentValue: String
+    +alertValue: String
+}
+
+User::Id ||--o{ UserPermission
+System::Id ||--o{ UserPermission
 System ||--o{ Device
 System ||--o{ Sensor
 System ||--o{ Scenario
 Sensor ||--o{ SensorAlertTemplate
 Sensor ||--o{ ScenarioCondition
+Sensor ||--o{ SensorEventLog
 Scenario ||--o{ ScenarioStep
 ScenarioStep ||--o{ ScenarioCondition
 @enduml
