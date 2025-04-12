@@ -1,0 +1,55 @@
+@startuml
+
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+Person(user, "Клиент", "Пользователь системы")
+
+System_Boundary(frontend, "Пользовательский интерфейс") {
+    Container(web, "Web интерфейс", "React", "Веб интерфейс пользователя")
+}
+
+System_Boundary(smart_home, "Система 'Умный дом' клиента"){
+    Container(sensors, "Массив датчиков", "hardware sensor", "Датчики телеметрии различных систем дома")
+    Container(home_server, "Управляющее устройство", "hardware device", "Локальное устройство для управления отдельными системами дома")
+    Container(device, "Массив управляемых устройств", "hardware device", "Различные устройства умного дома, поддерживающие протоколы удаленного управления")
+    Rel(home_server, device, "Команды управления устройством", "native protocols")
+    Rel(sensors, home_server, "Сигналы телеметрии", "native protocols")
+}
+
+System_Boundary(warm_house , "ИС 'Тёплый дом'") {
+    Container(api_gateway, "API шлюз", "Kong", "Общий сервис фильтрации и распределения запросов")
+    Container(telemetry_gateway, "Шлюз телеметрии", "Kong", "Сервис для входящих сообщений о состоянии различных датчиков")
+    Container(user_profile, "Профиль пользователя", "Java", "Сервис управления пользовательским профилем и добавлением новых устройств")
+    Container(telemetry_service, "Мониторинг показаний датчиков (телеметрия)", "Java", "Сервис обработки состояния датчиков и уведомления о пограничных значениях")
+    Container(kafka, "Шина асинхронных взаимодействий", "Apache Kafka", "Брокер сообщений для асинхронных взаимодействий")
+    Container(scenarios, "Сценарии", "Java", "Сервис сценариев и шаблонов управления умным домом")
+    Container(device_service, "Управление устройствами", "Java", "Сервис удаленного управления устройствами умного дома, в том числе подключения к видеонаблюдению")
+    Rel(telemetry_gateway, kafka, "Отправить на обработку сообщение телеметрии","Json")
+    Rel(kafka, telemetry_service, "Обработать сообщение телеметрии", "Json")
+    Rel(telemetry_service, kafka, "Опубликовать событие достижения пороговых значений датчиков", "Json")
+    Rel(kafka, scenarios, "Получить событие достижения пороговых значений", "Json")
+    Rel(user_profile, kafka, "Опубликовать событие добавления/изменения устройства/датчика", "Json")
+    Rel(kafka, device_service, "Получить событие добавления/изменения устройства", "Json")
+    Rel(kafka, telemetry_service, "Получить событие добавления/изменения датчика", "Json")
+    Rel(api_gateway, user_profile, "Запросы на управление профилем пользователя, добавления и настройки устройств", "REST API")
+    Rel(api_gateway, device_service, "Команда управления устройством", "REST API")
+    Rel(api_gateway, telemetry_service, "Запросить состояние датчиков", "REST API")
+    Rel(api_gateway, scenarios, "Добавить/изменить сценарий управления устройствами дома", "REST API")
+    Rel(scenarios, device_service, "Команда на управление устройством", "REST API")
+    Rel(scenarios, telemetry_service, "Запросить показания датчиков", "REST API")
+    Rel(scenarios, telemetry_service, "Установить паттерны возникновения событий достижения пороговых значений", "REST API")
+}
+
+Rel(user, web, "Добавление/настройка устройств")
+Rel(user, web, "Настроить сценарий управления умным домом")
+Rel(user, web, "Получить показания телеметрии")
+Rel(user, web, "Отправить управляющую команду на устройство")
+Rel(web, api_gateway, "Передать запрос пользователя", "HTTP/HTTPS")
+Rel(user, home_server, "Локально настроить устройства и датчики")
+Rel(home_server, telemetry_gateway, "Передать состояние датчиков", "Json")
+Rel(sensors, telemetry_gateway, "Передать состояние датчиков (телеметрия)", "Json")
+Rel(device_service, home_server, "Включить/выключить систему отопления", "REST API")
+Rel(device_service, device, "Включить/выключить систему отопления", "REST API")
+
+@enduml
+

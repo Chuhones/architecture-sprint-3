@@ -1,0 +1,119 @@
+@startuml
+
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Диаграмма ER
+
+entity User as "Пользователь" {
+    *id: Long
+    ..
+    *name: String
+    *login: String
+    *password: String
+    +phone: String
+    +email: String
+}
+
+entity UserPermission as "Привилегии пользователя" {
+    *id: Long
+    ..
+    *permissionType: String
+    *userId: String
+    *systemId: String
+    *isActive
+}
+
+entity System as "Система умного дома"{
+    *id: Long
+    ..
+    *name: String
+    +address: String
+    +description: String
+
+}
+
+entity Device as "Управляемое устройство"{
+    *Id: Long
+    ..
+    *name: String
+    *typeId: Long
+    *systemId: Long
+    +serialNumber: String
+    *status: String
+    *connectionLink: String
+}
+
+entity Sensor as "Датчик"{
+    *Id: Long
+    ..
+    *externalId: UUID
+    *name: String
+    *typeId: Long
+    *systemId: Long
+    +serialNumber: String
+    *status: String
+    *currentValue: String
+}
+
+entity Scenario as "Сценарий"{
+    *Id: Long
+    ..
+    *name: String
+    *typeId: Long
+    *systemId: Long
+}
+
+entity ScenarioStep as "Шаг сценария"{
+    *Id: Long
+    ..
+    *name: String
+    *typeId: Long
+    *scenarioId: Long
+    *conditionId: Long
+    *order: int
+    *actionType: String
+    *deviceId: Long
+}
+
+entity ScenarioCondition as "Условие срабатывания шага сценария"{
+    *Id: Long
+    ..
+    *name: String
+    *typeId: Long
+    *scenarioStepId: Long
+    *sensorId: Long
+    *condition: String
+}
+
+entity SensorAlertTemplate as "Условие срабатывания события датчика (alert)"{
+    *Id: Long
+    ..
+    *name: String
+    *typeId: Long
+    *sensorId: Long
+    *condition: String
+    *message: String
+}
+
+entity SensorEventLog as "Журнал показаний датчика"{
+    *Id: UUID
+    ..
+    *sensorId: String
+    *eventTime: Timestamp
+    *eventType: String
+    *currentValue: String
+    +alertValue: String
+}
+
+User::Id ||--o{ UserPermission
+System::Id ||--o{ UserPermission
+System ||--o{ Device
+System ||--o{ Sensor
+System ||--o{ Scenario
+Sensor ||--o{ SensorAlertTemplate
+Sensor ||--o{ ScenarioCondition
+Sensor ||--o{ SensorEventLog
+Scenario ||--o{ ScenarioStep
+ScenarioStep ||--o{ ScenarioCondition
+@enduml

@@ -1,0 +1,149 @@
+@startuml
+
+title Диаграмма кода/классов для Управления устройствами
+
+class CommandController {
+    -commandServicePort:
+    --
+    +getStatus(Long): String
+    +executeCommand(String): String
+}
+
+class EventListener {
+    -eventServicePort:
+    --
+    +listen(String): void
+}
+
+interface CommandServicePort {
+    +getStatus(Long): String
+    +executeCommand(ExecutionContext): String
+}
+
+interface EventServicePort {
+    +updateDevice(Device): boolean
+}
+
+
+class CommandService implements CommandServicePort{
+    -crudRepository: CrudRepository
+    -deviceAdapters: DeviceAdapterPort[]
+    --
+    +getStatus(Long): String
+    +executeCommand(ExecutionContext): String
+}
+
+class EventService implements EventServicePort{
+    -crudRepository:
+    --
+    +updateDevice(Device): boolean
+}
+
+
+interface DeviceAdapterPort {
+    +isSupported(Device): boolean
+    +getStatus(Device): String
+    +sendCommand(Device, Command): boolean
+}
+
+interface LightAdapterPort extends DeviceAdapterPort{
+    +isSupported(Device): boolean
+    +getStatus(Device): String
+    +sendCommand(Device, Command): boolean
+}
+
+interface HeatAdapterPort extends DeviceAdapterPort{
+    +isSupported(Device): boolean
+    +getStatus(Device): String
+    +sendCommand(Device, Command): boolean
+}
+
+interface GateAdapterPort extends DeviceAdapterPort{
+    +isSupported(Device): boolean
+    +getStatus(Device): String
+    +sendCommand(Device, Command): boolean
+}
+
+interface VideoAdapterPort extends DeviceAdapterPort{
+    +isSupported(Device): boolean
+    +getStatus(Device): String
+    +directConnect(Device): Connection
+    +sendCommand(Device, Command): boolean
+}
+
+interface CrudRepository {
+    findAll(): List<T>
+    findById(String): Optional<T>
+    save(T): boolean
+}
+
+class LightAdapter implements LightAdapterPort{
+    --
+    +isSupported(Device): boolean
+    +getStatus(Device): String
+    +sendCommand(Device, Command): boolean
+}
+
+class HeatAdapter implements HeatAdapterPort{
+    --
+    +isSupported(Device): boolean
+    +getStatus(Device): String
+    +sendCommand(Device, Command): boolean
+}
+
+
+class GateAdapter implements GateAdapterPort{
+    --
+    +isSupported(Device): boolean
+    +getStatus(Device): String
+    +sendCommand(Device, Command): boolean
+}
+
+class VideoAdapter implements VideoAdapterPort{
+    --
+    +isSupported(Device): boolean
+    +getStatus(Device): String
+    +directConnect(Device): Connection
+    +sendCommand(Device, Command): boolean
+}
+
+entity Device {
+    id: Long
+    name: String
+    type_id: Long
+    system_id: Long
+    serial_number: String
+    status: String
+    connection_link: String
+    --
+}
+
+class Command {
+    +actionList: String[]
+    --
+}
+
+class ExecutionContext {
+    +deviceId: Long
+    +command: Command
+    --
+}
+
+CommandServicePort o-- CommandController: Uses
+EventServicePort o-- EventListener: Uses
+CrudRepository o-- CommandService: Uses
+CrudRepository o-- EventService: Uses
+Device *-- CommandService: Uses
+Command *-- CommandService: Uses
+ExecutionContext *-- CommandService: Uses
+DeviceAdapterPort *-- CommandService: Uses
+Device *-- EventService: Uses
+Command *-- VideoAdapter: Uses
+Command *-- GateAdapter: Uses
+Command *-- HeatAdapter: Uses
+Command *-- LightAdapter: Uses
+
+
+
+
+@enduml

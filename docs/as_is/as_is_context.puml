@@ -1,0 +1,18 @@
+@startuml
+
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+
+
+Person(user, "Клиент", "Пользователь системы")
+
+System(monolith, "ИС 'Тёплый дом'", "Монолитная система, написанная на Java и включающая в себя БД Postgres")
+System(sensors , "Система 'Умный дом' клиента", "Система из датчиков и устройств управления отоплением клиента")
+
+Rel(user, monolith, "Запросить показания датчиков температуры", "HTTP/HTTPS")
+Rel(user, monolith, "Включить/выключить отопление", "HTTP/HTTPS")
+Rel(monolith, sensors, "Опросить датчики температуры", "REST API")
+Rel(monolith, sensors, "Включить/выключить систему отопления", "REST API")
+
+@enduml
+
